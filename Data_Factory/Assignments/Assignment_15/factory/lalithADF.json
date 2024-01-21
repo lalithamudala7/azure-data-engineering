@@ -1,0 +1,9 @@
+{
+	"name": "lalithADF",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "e7698bb7-df22-4aa8-b450-debdbeb06017",
+		"tenantId": "88d59d7d-aecb-41b2-90c5-55595de02536"
+	}
+}
