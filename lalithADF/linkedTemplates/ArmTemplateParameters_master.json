@@ -5,14 +5,8 @@
 		"factoryName": {
 			"value": "lalithADF"
 		},
-		"LS_BlbSA_Dest_connectionString": {
+		"LS_BlbSA_Src_connectionString": {
 			"value": ""
-		},
-		"LS_Gen2SA_Src_accountKey": {
-			"value": ""
-		},
-		"LS_Gen2SA_Src_properties_typeProperties_url": {
-			"value": "https://lalithsrcsa.dfs.core.windows.net/"
 		},
 		"containerUri": {
 			"value": ""

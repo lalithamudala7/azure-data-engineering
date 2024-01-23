@@ -7,17 +7,9 @@
 			"metadata": "Data Factory name",
 			"defaultValue": "lalithADF"
 		},
-		"LS_BlbSA_Dest_connectionString": {
+		"LS_BlbSA_Src_connectionString": {
 			"type": "secureString",
-			"metadata": "Secure string for 'connectionString' of 'LS_BlbSA_Dest'"
-		},
-		"LS_Gen2SA_Src_accountKey": {
-			"type": "secureString",
-			"metadata": "Secure string for 'accountKey' of 'LS_Gen2SA_Src'"
-		},
-		"LS_Gen2SA_Src_properties_typeProperties_url": {
-			"type": "string",
-			"defaultValue": "https://lalithsrcsa.dfs.core.windows.net/"
+			"metadata": "Secure string for 'connectionString' of 'LS_BlbSA_Src'"
 		},
 		"containerUri": {
 			"type": "string",
@@ -46,14 +38,8 @@
 					"factoryName": {
 						"value": "[parameters('factoryName')]"
 					},
-					"LS_BlbSA_Dest_connectionString": {
-						"value": "[parameters('LS_BlbSA_Dest_connectionString')]"
-					},
-					"LS_Gen2SA_Src_accountKey": {
-						"value": "[parameters('LS_Gen2SA_Src_accountKey')]"
-					},
-					"LS_Gen2SA_Src_properties_typeProperties_url": {
-						"value": "[parameters('LS_Gen2SA_Src_properties_typeProperties_url')]"
+					"LS_BlbSA_Src_connectionString": {
+						"value": "[parameters('LS_BlbSA_Src_connectionString')]"
 					}
 				}
 			},
