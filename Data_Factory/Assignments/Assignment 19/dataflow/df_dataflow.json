@@ -1,0 +1,56 @@
+{
+	"name": "df_dataflow",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"linkedService": {
+						"referenceName": "LS_adlsa",
+						"type": "LinkedServiceReference"
+					},
+					"name": "Sourcefromadlsa"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_blbsa",
+						"type": "DatasetReference"
+					},
+					"name": "SinkData"
+				}
+			],
+			"transformations": [
+				{
+					"name": "FilterTheRows"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          Country as string,",
+				"          Year as short,",
+				"          Product_Type as string,",
+				"          Sales as short",
+				"     ),",
+				"     useSchema: false,",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     format: 'delimited',",
+				"     fileSystem: 'srccon',",
+				"     fileName: 'Sales_File_2020_USA_UK_IND.csv',",
+				"     columnDelimiter: ',',",
+				"     escapeChar: '\\\\',",
+				"     quoteChar: '\\\"',",
+				"     columnNamesAsHeader: true) ~> Sourcefromadlsa",
+				"Sourcefromadlsa filter(Year == 2020 && Product_Type == 'electronics') ~> FilterTheRows",
+				"FilterTheRows sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     rowUrlColumn:'Country',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> SinkData"
+			]
+		}
+	}
+}
