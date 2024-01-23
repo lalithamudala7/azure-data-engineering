@@ -7,17 +7,17 @@
 			"metadata": "Data Factory name",
 			"defaultValue": "lalithADF"
 		},
-		"LS_SrcSA_connectionString": {
+		"LS_adlsa_accountKey": {
 			"type": "secureString",
-			"metadata": "Secure string for 'connectionString' of 'LS_SrcSA'"
+			"metadata": "Secure string for 'accountKey' of 'LS_adlsa'"
 		},
-		"LS_KeyVault_properties_typeProperties_baseUrl": {
-			"type": "string",
-			"defaultValue": "https://lalithkv.vault.azure.net/"
+		"LS_blbsa_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'LS_blbsa'"
 		},
-		"LS_SQLKeyVault_properties_typeProperties_connectionString_secretName": {
+		"LS_adlsa_properties_typeProperties_url": {
 			"type": "string",
-			"defaultValue": "SQLConnectionString"
+			"defaultValue": "https://lalithsrcsa.dfs.core.windows.net/"
 		}
 	},
 	"variables": {
@@ -25,61 +25,108 @@
 	},
 	"resources": [
 		{
-			"name": "[concat(parameters('factoryName'), '/PL_BranchPractice')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"activities": [
-					{
-						"name": "WaitFor10Seconds",
-						"type": "Wait",
-						"dependsOn": [],
-						"userProperties": [],
-						"typeProperties": {
-							"waitTimeInSeconds": 10
-						}
-					}
-				],
-				"policy": {
-					"elapsedTimeMetric": {}
-				},
-				"annotations": []
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/LS_KeyVault')]",
+			"name": "[concat(parameters('factoryName'), '/LS_adlsa')]",
 			"type": "Microsoft.DataFactory/factories/linkedServices",
 			"apiVersion": "2018-06-01",
 			"properties": {
 				"annotations": [],
-				"type": "AzureKeyVault",
+				"type": "AzureBlobFS",
 				"typeProperties": {
-					"baseUrl": "[parameters('LS_KeyVault_properties_typeProperties_baseUrl')]"
+					"url": "[parameters('LS_adlsa_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('LS_adlsa_accountKey')]"
+					}
 				}
 			},
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/LS_SrcSA')]",
+			"name": "[concat(parameters('factoryName'), '/LS_blbsa')]",
 			"type": "Microsoft.DataFactory/factories/linkedServices",
 			"apiVersion": "2018-06-01",
 			"properties": {
 				"annotations": [],
 				"type": "AzureBlobStorage",
 				"typeProperties": {
-					"connectionString": "[parameters('LS_SrcSA_connectionString')]"
+					"connectionString": "[parameters('LS_blbsa_connectionString')]"
 				}
 			},
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/DS_SrcSA')]",
+			"name": "[concat(parameters('factoryName'), '/integrationRuntime1')]",
+			"type": "Microsoft.DataFactory/factories/integrationRuntimes",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "Managed",
+				"typeProperties": {
+					"computeProperties": {
+						"location": "AutoResolve",
+						"dataFlowProperties": {
+							"computeType": "General",
+							"coreCount": 8,
+							"timeToLive": 10,
+							"cleanup": false,
+							"customProperties": []
+						}
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_adlsa')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
 			"properties": {
 				"linkedServiceName": {
-					"referenceName": "LS_SrcSA",
+					"referenceName": "LS_adlsa",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "Sales_File_2020_USA_UK_IND.csv",
+						"fileSystem": "srccon"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "Country",
+						"type": "String"
+					},
+					{
+						"name": "Year",
+						"type": "String"
+					},
+					{
+						"name": "Product_Type",
+						"type": "String"
+					},
+					{
+						"name": "Sales",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_adlsa')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_blbsa')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_blbsa",
 					"type": "LinkedServiceReference"
 				},
 				"annotations": [],
@@ -87,7 +134,7 @@
 				"typeProperties": {
 					"location": {
 						"type": "AzureBlobStorageLocation",
-						"container": "srccon"
+						"container": "destcon"
 					},
 					"columnDelimiter": ",",
 					"escapeChar": "\\",
@@ -97,40 +144,80 @@
 				"schema": []
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/LS_SrcSA')]"
+				"[concat(variables('factoryId'), '/linkedServices/LS_blbsa')]"
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/LS_SQLKeyVault')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"name": "[concat(parameters('factoryName'), '/df_dataflow')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
 			"apiVersion": "2018-06-01",
 			"properties": {
-				"annotations": [],
-				"type": "AzureSqlDatabase",
+				"type": "MappingDataFlow",
 				"typeProperties": {
-					"connectionString": {
-						"type": "AzureKeyVaultSecret",
-						"store": {
-							"referenceName": "LS_KeyVault",
-							"type": "LinkedServiceReference"
-						},
-						"secretName": "[parameters('LS_SQLKeyVault_properties_typeProperties_connectionString_secretName')]"
-					}
+					"sources": [
+						{
+							"linkedService": {
+								"referenceName": "LS_adlsa",
+								"type": "LinkedServiceReference"
+							},
+							"name": "Sourcefromadlsa"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "ds_blbsa",
+								"type": "DatasetReference"
+							},
+							"name": "SinkData"
+						}
+					],
+					"transformations": [
+						{
+							"name": "FilterTheRows"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          Country as string,",
+						"          Year as short,",
+						"          Product_Type as string,",
+						"          Sales as short",
+						"     ),",
+						"     useSchema: false,",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false,",
+						"     format: 'delimited',",
+						"     fileSystem: 'srccon',",
+						"     fileName: 'Sales_File_2020_USA_UK_IND.csv',",
+						"     columnDelimiter: ',',",
+						"     escapeChar: '\\\\',",
+						"     quoteChar: '\\\"',",
+						"     columnNamesAsHeader: true) ~> Sourcefromadlsa",
+						"Sourcefromadlsa filter(Year == 2020 && Product_Type == 'electronics') ~> FilterTheRows",
+						"FilterTheRows sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     rowUrlColumn:'Country',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> SinkData"
+					]
 				}
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/LS_KeyVault')]"
+				"[concat(variables('factoryId'), '/linkedServices/LS_adlsa')]",
+				"[concat(variables('factoryId'), '/datasets/ds_blbsa')]"
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/pipeline1')]",
+			"name": "[concat(parameters('factoryName'), '/Run_Dataflow')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
 			"properties": {
 				"activities": [
 					{
-						"name": "Get Files Metadata",
-						"type": "GetMetadata",
+						"name": "RunDataFlow",
+						"type": "ExecuteDataFlow",
 						"dependsOn": [],
 						"policy": {
 							"timeout": "0.12:00:00",
@@ -141,22 +228,21 @@
 						},
 						"userProperties": [],
 						"typeProperties": {
-							"dataset": {
-								"referenceName": "DS_SrcSA",
-								"type": "DatasetReference",
-								"parameters": {}
+							"dataflow": {
+								"referenceName": "df_dataflow",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"Sourcefromadlsa": {},
+									"SinkData": {}
+								}
 							},
-							"fieldList": [
-								"childItems"
-							],
-							"storeSettings": {
-								"type": "AzureBlobStorageReadSettings",
-								"recursive": true,
-								"enablePartitionDiscovery": false
+							"staging": {},
+							"integrationRuntime": {
+								"referenceName": "integrationRuntime1",
+								"type": "IntegrationRuntimeReference"
 							},
-							"formatSettings": {
-								"type": "DelimitedTextReadSettings"
-							}
+							"traceLevel": "Coarse"
 						}
 					}
 				],
@@ -164,10 +250,11 @@
 					"elapsedTimeMetric": {}
 				},
 				"annotations": [],
-				"lastPublishTime": "2024-01-21T08:01:29Z"
+				"lastPublishTime": "2024-01-23T05:41:51Z"
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/DS_SrcSA')]"
+				"[concat(variables('factoryId'), '/dataflows/df_dataflow')]",
+				"[concat(variables('factoryId'), '/integrationRuntimes/integrationRuntime1')]"
 			]
 		}
 	]

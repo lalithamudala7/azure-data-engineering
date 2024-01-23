@@ -5,14 +5,14 @@
 		"factoryName": {
 			"value": "lalithADF"
 		},
-		"LS_SrcSA_connectionString": {
+		"LS_adlsa_accountKey": {
 			"value": ""
 		},
-		"LS_KeyVault_properties_typeProperties_baseUrl": {
-			"value": "https://lalithkv.vault.azure.net/"
+		"LS_blbsa_connectionString": {
+			"value": ""
 		},
-		"LS_SQLKeyVault_properties_typeProperties_connectionString_secretName": {
-			"value": "SQLConnectionString"
+		"LS_adlsa_properties_typeProperties_url": {
+			"value": "https://lalithsrcsa.dfs.core.windows.net/"
 		},
 		"containerUri": {
 			"value": ""
