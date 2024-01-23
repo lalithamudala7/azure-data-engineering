@@ -7,9 +7,17 @@
 			"metadata": "Data Factory name",
 			"defaultValue": "lalithADF"
 		},
+		"LS_Adlsa_Dest_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'LS_Adlsa_Dest'"
+		},
 		"LS_BlbSA_Src_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'LS_BlbSA_Src'"
+		},
+		"LS_Adlsa_Dest_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://lalithdestsa.dfs.core.windows.net/"
 		},
 		"containerUri": {
 			"type": "string",
@@ -38,8 +46,14 @@
 					"factoryName": {
 						"value": "[parameters('factoryName')]"
 					},
+					"LS_Adlsa_Dest_accountKey": {
+						"value": "[parameters('LS_Adlsa_Dest_accountKey')]"
+					},
 					"LS_BlbSA_Src_connectionString": {
 						"value": "[parameters('LS_BlbSA_Src_connectionString')]"
+					},
+					"LS_Adlsa_Dest_properties_typeProperties_url": {
+						"value": "[parameters('LS_Adlsa_Dest_properties_typeProperties_url')]"
 					}
 				}
 			},

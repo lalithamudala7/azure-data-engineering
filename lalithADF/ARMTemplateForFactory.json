@@ -7,9 +7,17 @@
 			"metadata": "Data Factory name",
 			"defaultValue": "lalithADF"
 		},
+		"LS_Adlsa_Dest_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'LS_Adlsa_Dest'"
+		},
 		"LS_BlbSA_Src_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'LS_BlbSA_Src'"
+		},
+		"LS_Adlsa_Dest_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://lalithdestsa.dfs.core.windows.net/"
 		}
 	},
 	"variables": {
@@ -41,7 +49,9 @@
 								"parameters": {},
 								"datasetParameters": {
 									"source1": {},
-									"DataLoading": {}
+									"USAUK": {},
+									"USAIND": {},
+									"Default": {}
 								}
 							},
 							"staging": {},
@@ -49,7 +59,8 @@
 								"coreCount": 8,
 								"computeType": "General"
 							},
-							"traceLevel": "Fine"
+							"traceLevel": "Fine",
+							"runConcurrently": true
 						}
 					}
 				],
@@ -57,10 +68,38 @@
 					"elapsedTimeMetric": {}
 				},
 				"annotations": [],
-				"lastPublishTime": "2024-01-23T22:41:42Z"
+				"lastPublishTime": "2024-01-23T23:12:39Z"
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/dataflows/df_dataflow1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_adlsa_dest')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_Adlsa_Dest",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "conditional split",
+						"fileSystem": "destcon"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_Adlsa_Dest')]"
 			]
 		},
 		{
@@ -109,6 +148,23 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/LS_Adlsa_Dest')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('LS_Adlsa_Dest_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('LS_Adlsa_Dest_accountKey')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/LS_BlbSA_Src')]",
 			"type": "Microsoft.DataFactory/factories/linkedServices",
 			"apiVersion": "2018-06-01",
@@ -140,15 +196,29 @@
 					"sinks": [
 						{
 							"dataset": {
-								"referenceName": "ds_blbsa_src",
+								"referenceName": "ds_adlsa_dest",
 								"type": "DatasetReference"
 							},
-							"name": "DataLoading"
+							"name": "USAUK"
+						},
+						{
+							"dataset": {
+								"referenceName": "ds_adlsa_dest",
+								"type": "DatasetReference"
+							},
+							"name": "USAIND"
+						},
+						{
+							"dataset": {
+								"referenceName": "ds_adlsa_dest",
+								"type": "DatasetReference"
+							},
+							"name": "Default"
 						}
 					],
 					"transformations": [
 						{
-							"name": "aggregate1"
+							"name": "split1"
 						}
 					],
 					"scriptLines": [
@@ -161,28 +231,43 @@
 						"     allowSchemaDrift: true,",
 						"     validateSchema: false,",
 						"     ignoreNoFilesFound: false) ~> source1",
-						"source1 aggregate(groupBy(Country),",
-						"     MaxSales = max(Sales),",
-						"          MinSales = min(Sales),",
-						"          SumSales = sum(Sales),",
-						"          AvgSales = avg(Sales),",
-						"          CountSales = count(Sales)) ~> aggregate1",
-						"aggregate1 sink(allowSchemaDrift: true,",
+						"source1 split(Country == 'USA' || Country == 'UK',",
+						"     Country == 'USA' || Country == 'IND',",
+						"     Country == 'Default',",
+						"     disjoint: true) ~> split1@(USAUK, USAIND, Default)",
+						"split1@USAUK sink(allowSchemaDrift: true,",
 						"     validateSchema: false,",
-						"     input(",
-						"          Country as string,",
-						"          Year as string,",
-						"          Product_Type as string,",
-						"          Sales as string",
-						"     ),",
-						"     rowUrlColumn:'Country',",
+						"     partitionFileNames:['USAUK.csv'],",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
 						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true) ~> DataLoading"
+						"     skipDuplicateMapOutputs: true,",
+						"     partitionBy('hash', 1)) ~> USAUK",
+						"split1@USAIND sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     partitionFileNames:['USAIND.csv'],",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     partitionBy('hash', 1)) ~> USAIND",
+						"split1@Default sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     partitionFileNames:['Default.csv'],",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     partitionBy('hash', 1)) ~> Default"
 					]
 				}
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/ds_blbsa_src')]"
+				"[concat(variables('factoryId'), '/datasets/ds_blbsa_src')]",
+				"[concat(variables('factoryId'), '/datasets/ds_adlsa_dest')]"
 			]
 		}
 	]
