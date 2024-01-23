@@ -1,0 +1,87 @@
+{
+	"name": "df_dataflow1",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_blbsa_src",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_adlsa_dest",
+						"type": "DatasetReference"
+					},
+					"name": "USAUK"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_adlsa_dest",
+						"type": "DatasetReference"
+					},
+					"name": "USAIND"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_adlsa_dest",
+						"type": "DatasetReference"
+					},
+					"name": "Default"
+				}
+			],
+			"transformations": [
+				{
+					"name": "split1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          Country as string,",
+				"          Year as short,",
+				"          Product_Type as string,",
+				"          Sales as short",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> source1",
+				"source1 split(Country == 'USA' || Country == 'UK',",
+				"     Country == 'USA' || Country == 'IND',",
+				"     Country == 'Default',",
+				"     disjoint: true) ~> split1@(USAUK, USAIND, Default)",
+				"split1@USAUK sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     partitionFileNames:['USAUK.csv'],",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     partitionBy('hash', 1)) ~> USAUK",
+				"split1@USAIND sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     partitionFileNames:['USAIND.csv'],",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     partitionBy('hash', 1)) ~> USAIND",
+				"split1@Default sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     partitionFileNames:['Default.csv'],",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     partitionBy('hash', 1)) ~> Default"
+			]
+		}
+	}
+}
