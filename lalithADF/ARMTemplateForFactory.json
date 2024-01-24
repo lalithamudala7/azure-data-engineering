@@ -25,7 +25,7 @@
 	},
 	"resources": [
 		{
-			"name": "[concat(parameters('factoryName'), '/PL_Dataflow')]",
+			"name": "[concat(parameters('factoryName'), '/PL_df_dataflow5')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
 			"properties": {
@@ -49,9 +49,8 @@
 								"parameters": {},
 								"datasetParameters": {
 									"source1": {},
-									"USAUK": {},
-									"USAIND": {},
-									"Default": {}
+									"source2": {},
+									"sink1": {}
 								}
 							},
 							"staging": {},
@@ -59,8 +58,7 @@
 								"coreCount": 8,
 								"computeType": "General"
 							},
-							"traceLevel": "Fine",
-							"runConcurrently": true
+							"traceLevel": "Fine"
 						}
 					}
 				],
@@ -68,7 +66,7 @@
 					"elapsedTimeMetric": {}
 				},
 				"annotations": [],
-				"lastPublishTime": "2024-01-23T23:12:39Z"
+				"lastPublishTime": "2024-01-24T00:15:12Z"
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/dataflows/df_dataflow1')]"
@@ -103,7 +101,7 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/ds_blbsa_src')]",
+			"name": "[concat(parameters('factoryName'), '/ds_blbsa_2014')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
 			"properties": {
@@ -116,7 +114,52 @@
 				"typeProperties": {
 					"location": {
 						"type": "AzureBlobStorageLocation",
-						"fileName": "Sales_File_2014_2019_USA_UK_IND.csv",
+						"fileName": "Sales_File_2014.csv",
+						"container": "srccon"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "Country",
+						"type": "String"
+					},
+					{
+						"name": "Year",
+						"type": "String"
+					},
+					{
+						"name": "Product_Type",
+						"type": "String"
+					},
+					{
+						"name": "Sales",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_BlbSA_Src')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_blbsa_2020')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_BlbSA_Src",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "Sales_File_2020.csv",
 						"container": "srccon"
 					},
 					"columnDelimiter": ",",
@@ -187,10 +230,17 @@
 					"sources": [
 						{
 							"dataset": {
-								"referenceName": "ds_blbsa_src",
+								"referenceName": "ds_blbsa_2014",
 								"type": "DatasetReference"
 							},
 							"name": "source1"
+						},
+						{
+							"dataset": {
+								"referenceName": "ds_blbsa_2020",
+								"type": "DatasetReference"
+							},
+							"name": "source2"
 						}
 					],
 					"sinks": [
@@ -199,74 +249,51 @@
 								"referenceName": "ds_adlsa_dest",
 								"type": "DatasetReference"
 							},
-							"name": "USAUK"
-						},
-						{
-							"dataset": {
-								"referenceName": "ds_adlsa_dest",
-								"type": "DatasetReference"
-							},
-							"name": "USAIND"
-						},
-						{
-							"dataset": {
-								"referenceName": "ds_adlsa_dest",
-								"type": "DatasetReference"
-							},
-							"name": "Default"
+							"name": "sink1"
 						}
 					],
 					"transformations": [
 						{
-							"name": "split1"
+							"name": "Exists"
 						}
 					],
 					"scriptLines": [
 						"source(output(",
 						"          Country as string,",
-						"          Year as short,",
+						"          Year as string,",
 						"          Product_Type as string,",
-						"          Sales as short",
+						"          Sales as string",
 						"     ),",
 						"     allowSchemaDrift: true,",
 						"     validateSchema: false,",
 						"     ignoreNoFilesFound: false) ~> source1",
-						"source1 split(Country == 'USA' || Country == 'UK',",
-						"     Country == 'USA' || Country == 'IND',",
-						"     Country == 'Default',",
-						"     disjoint: true) ~> split1@(USAUK, USAIND, Default)",
-						"split1@USAUK sink(allowSchemaDrift: true,",
+						"source(output(",
+						"          Country as string,",
+						"          Year as string,",
+						"          Product_Type as string,",
+						"          Sales as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
 						"     validateSchema: false,",
-						"     partitionFileNames:['USAUK.csv'],",
+						"     ignoreNoFilesFound: false) ~> source2",
+						"source1, source2 exists(source1@Product_Type == source2@Product_Type,",
+						"     negate:false,",
+						"     broadcast: 'auto')~> Exists",
+						"Exists sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     partitionFileNames:['OnlyYears.csv'],",
 						"     umask: 0022,",
 						"     preCommands: [],",
 						"     postCommands: [],",
 						"     skipDuplicateMapInputs: true,",
 						"     skipDuplicateMapOutputs: true,",
-						"     partitionBy('hash', 1)) ~> USAUK",
-						"split1@USAIND sink(allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     partitionFileNames:['USAIND.csv'],",
-						"     umask: 0022,",
-						"     preCommands: [],",
-						"     postCommands: [],",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true,",
-						"     partitionBy('hash', 1)) ~> USAIND",
-						"split1@Default sink(allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     partitionFileNames:['Default.csv'],",
-						"     umask: 0022,",
-						"     preCommands: [],",
-						"     postCommands: [],",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true,",
-						"     partitionBy('hash', 1)) ~> Default"
+						"     partitionBy('hash', 1)) ~> sink1"
 					]
 				}
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/ds_blbsa_src')]",
+				"[concat(variables('factoryId'), '/datasets/ds_blbsa_2014')]",
+				"[concat(variables('factoryId'), '/datasets/ds_blbsa_2020')]",
 				"[concat(variables('factoryId'), '/datasets/ds_adlsa_dest')]"
 			]
 		}
