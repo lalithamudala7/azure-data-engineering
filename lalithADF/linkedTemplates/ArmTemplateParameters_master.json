@@ -5,13 +5,13 @@
 		"factoryName": {
 			"value": "lalithADF"
 		},
-		"LS_Adlsa_Dest_accountKey": {
+		"LS_Adlsa_accountKey": {
 			"value": ""
 		},
-		"LS_BlbSA_Src_connectionString": {
+		"LS_Sql_connectionString": {
 			"value": ""
 		},
-		"LS_Adlsa_Dest_properties_typeProperties_url": {
+		"LS_Adlsa_properties_typeProperties_url": {
 			"value": "https://lalithdestsa.dfs.core.windows.net/"
 		},
 		"containerUri": {

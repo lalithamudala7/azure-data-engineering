@@ -7,15 +7,15 @@
 			"metadata": "Data Factory name",
 			"defaultValue": "lalithADF"
 		},
-		"LS_Adlsa_Dest_accountKey": {
+		"LS_Adlsa_accountKey": {
 			"type": "secureString",
-			"metadata": "Secure string for 'accountKey' of 'LS_Adlsa_Dest'"
+			"metadata": "Secure string for 'accountKey' of 'LS_Adlsa'"
 		},
-		"LS_BlbSA_Src_connectionString": {
+		"LS_Sql_connectionString": {
 			"type": "secureString",
-			"metadata": "Secure string for 'connectionString' of 'LS_BlbSA_Src'"
+			"metadata": "Secure string for 'connectionString' of 'LS_Sql'"
 		},
-		"LS_Adlsa_Dest_properties_typeProperties_url": {
+		"LS_Adlsa_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://lalithdestsa.dfs.core.windows.net/"
 		}
@@ -49,7 +49,6 @@
 								"parameters": {},
 								"datasetParameters": {
 									"source1": {},
-									"source2": {},
 									"sink1": {}
 								}
 							},
@@ -66,19 +65,126 @@
 					"elapsedTimeMetric": {}
 				},
 				"annotations": [],
-				"lastPublishTime": "2024-01-24T00:37:27Z"
+				"lastPublishTime": "2024-01-24T14:34:18Z"
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/dataflows/df_dataflow1')]"
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/ds_adlsa_dest')]",
+			"name": "[concat(parameters('factoryName'), '/ds_Sql')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
 			"properties": {
 				"linkedServiceName": {
-					"referenceName": "LS_Adlsa_Dest",
+					"referenceName": "LS_Sql",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "ProductID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Name",
+						"type": "nvarchar"
+					},
+					{
+						"name": "ProductNumber",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Color",
+						"type": "nvarchar"
+					},
+					{
+						"name": "StandardCost",
+						"type": "money",
+						"precision": 19,
+						"scale": 4
+					},
+					{
+						"name": "ListPrice",
+						"type": "money",
+						"precision": 19,
+						"scale": 4
+					},
+					{
+						"name": "Size",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Weight",
+						"type": "decimal",
+						"precision": 8,
+						"scale": 2
+					},
+					{
+						"name": "ProductCategoryID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "ProductModelID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "SellStartDate",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					},
+					{
+						"name": "SellEndDate",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					},
+					{
+						"name": "DiscontinuedDate",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					},
+					{
+						"name": "ThumbNailPhoto",
+						"type": "varbinary"
+					},
+					{
+						"name": "ThumbnailPhotoFileName",
+						"type": "nvarchar"
+					},
+					{
+						"name": "rowguid",
+						"type": "uniqueidentifier"
+					},
+					{
+						"name": "ModifiedDate",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					}
+				],
+				"typeProperties": {
+					"schema": "SalesLT",
+					"table": "Product"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_Sql')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_adlsa')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_Adlsa",
 					"type": "LinkedServiceReference"
 				},
 				"annotations": [],
@@ -97,125 +203,35 @@
 				"schema": []
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/LS_Adlsa_Dest')]"
+				"[concat(variables('factoryId'), '/linkedServices/LS_Adlsa')]"
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/ds_blbsa_2017')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "LS_BlbSA_Src",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "DelimitedText",
-				"typeProperties": {
-					"location": {
-						"type": "AzureBlobStorageLocation",
-						"fileName": "2017_Students_Batch.csv",
-						"container": "srccon"
-					},
-					"columnDelimiter": ",",
-					"escapeChar": "\\",
-					"firstRowAsHeader": true,
-					"quoteChar": "\""
-				},
-				"schema": [
-					{
-						"name": "StudentsID",
-						"type": "String"
-					},
-					{
-						"name": "StudentsName",
-						"type": "String"
-					},
-					{
-						"name": "Address",
-						"type": "String"
-					},
-					{
-						"name": "Dept",
-						"type": "String"
-					}
-				]
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/LS_BlbSA_Src')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/ds_blbsa_2018')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "LS_BlbSA_Src",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "DelimitedText",
-				"typeProperties": {
-					"location": {
-						"type": "AzureBlobStorageLocation",
-						"fileName": "2018_Students_Batch.csv",
-						"container": "srccon"
-					},
-					"columnDelimiter": ",",
-					"escapeChar": "\\",
-					"firstRowAsHeader": true,
-					"quoteChar": "\""
-				},
-				"schema": [
-					{
-						"name": "StudentsID",
-						"type": "String"
-					},
-					{
-						"name": "StudentsName",
-						"type": "String"
-					},
-					{
-						"name": "Address",
-						"type": "String"
-					},
-					{
-						"name": "Dept",
-						"type": "String"
-					}
-				]
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/LS_BlbSA_Src')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/LS_Adlsa_Dest')]",
+			"name": "[concat(parameters('factoryName'), '/LS_Adlsa')]",
 			"type": "Microsoft.DataFactory/factories/linkedServices",
 			"apiVersion": "2018-06-01",
 			"properties": {
 				"annotations": [],
 				"type": "AzureBlobFS",
 				"typeProperties": {
-					"url": "[parameters('LS_Adlsa_Dest_properties_typeProperties_url')]",
+					"url": "[parameters('LS_Adlsa_properties_typeProperties_url')]",
 					"accountKey": {
 						"type": "SecureString",
-						"value": "[parameters('LS_Adlsa_Dest_accountKey')]"
+						"value": "[parameters('LS_Adlsa_accountKey')]"
 					}
 				}
 			},
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/LS_BlbSA_Src')]",
+			"name": "[concat(parameters('factoryName'), '/LS_Sql')]",
 			"type": "Microsoft.DataFactory/factories/linkedServices",
 			"apiVersion": "2018-06-01",
 			"properties": {
 				"annotations": [],
-				"type": "AzureBlobStorage",
+				"type": "AzureSqlDatabase",
 				"typeProperties": {
-					"connectionString": "[parameters('LS_BlbSA_Src_connectionString')]"
+					"connectionString": "[parameters('LS_Sql_connectionString')]"
 				}
 			},
 			"dependsOn": []
@@ -230,23 +246,16 @@
 					"sources": [
 						{
 							"dataset": {
-								"referenceName": "ds_blbsa_2017",
+								"referenceName": "ds_Sql",
 								"type": "DatasetReference"
 							},
 							"name": "source1"
-						},
-						{
-							"dataset": {
-								"referenceName": "ds_blbsa_2018",
-								"type": "DatasetReference"
-							},
-							"name": "source2"
 						}
 					],
 					"sinks": [
 						{
 							"dataset": {
-								"referenceName": "ds_adlsa_dest",
+								"referenceName": "ds_adlsa",
 								"type": "DatasetReference"
 							},
 							"name": "sink1"
@@ -254,36 +263,46 @@
 					],
 					"transformations": [
 						{
-							"name": "join1"
+							"name": "derivedColumn1"
+						},
+						{
+							"name": "pivot1"
 						}
 					],
 					"scriptLines": [
 						"source(output(",
-						"          StudentsID as string,",
-						"          StudentsName as string,",
-						"          Address as string,",
-						"          Dept as string",
+						"          ProductID as integer,",
+						"          Name as string,",
+						"          ProductNumber as string,",
+						"          Color as string,",
+						"          StandardCost as decimal(19,4),",
+						"          ListPrice as decimal(19,4),",
+						"          Size as string,",
+						"          Weight as decimal(8,2),",
+						"          ProductCategoryID as integer,",
+						"          ProductModelID as integer,",
+						"          SellStartDate as timestamp,",
+						"          SellEndDate as timestamp,",
+						"          DiscontinuedDate as timestamp,",
+						"          ThumbNailPhoto as binary,",
+						"          ThumbnailPhotoFileName as string,",
+						"          rowguid as string,",
+						"          ModifiedDate as timestamp",
 						"     ),",
 						"     allowSchemaDrift: true,",
 						"     validateSchema: false,",
-						"     ignoreNoFilesFound: false) ~> source1",
-						"source(output(",
-						"          StudentsID as string,",
-						"          StudentsName as string,",
-						"          Address as string,",
-						"          Dept as string",
-						"     ),",
-						"     allowSchemaDrift: true,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> source1",
+						"source1 derive(Color = iif(isNull(Color) || Color == 'null', 'NA', Color),",
+						"          Size = iif(isNull(Size) || Size == 'null', 'NA', Size)) ~> derivedColumn1",
+						"derivedColumn1 pivot(groupBy(Size),",
+						"     pivotBy(Color),",
+						"     Avg = avg(StandardCost),",
+						"     columnNaming: '$N$V',",
+						"     lateral: true) ~> pivot1",
+						"pivot1 sink(allowSchemaDrift: true,",
 						"     validateSchema: false,",
-						"     ignoreNoFilesFound: false) ~> source2",
-						"source1, source2 join(source1@StudentsID == source2@StudentsID,",
-						"     joinType:'inner',",
-						"     matchType:'exact',",
-						"     ignoreSpaces: false,",
-						"     broadcast: 'auto')~> join1",
-						"join1 sink(allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     partitionFileNames:['Innerjoinresults.csv'],",
+						"     partitionFileNames:['pivotresults.csv'],",
 						"     umask: 0022,",
 						"     preCommands: [],",
 						"     postCommands: [],",
@@ -294,9 +313,8 @@
 				}
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/ds_blbsa_2017')]",
-				"[concat(variables('factoryId'), '/datasets/ds_blbsa_2018')]",
-				"[concat(variables('factoryId'), '/datasets/ds_adlsa_dest')]"
+				"[concat(variables('factoryId'), '/datasets/ds_Sql')]",
+				"[concat(variables('factoryId'), '/datasets/ds_adlsa')]"
 			]
 		}
 	]
