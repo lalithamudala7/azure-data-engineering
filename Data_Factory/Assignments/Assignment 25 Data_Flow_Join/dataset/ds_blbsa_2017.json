@@ -1,0 +1,41 @@
+{
+	"name": "ds_blbsa_2017",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_BlbSA_Src",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": "2017_Students_Batch.csv",
+				"container": "srccon"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "StudentsID",
+				"type": "String"
+			},
+			{
+				"name": "StudentsName",
+				"type": "String"
+			},
+			{
+				"name": "Address",
+				"type": "String"
+			},
+			{
+				"name": "Dept",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}
