@@ -25,7 +25,7 @@
 	},
 	"resources": [
 		{
-			"name": "[concat(parameters('factoryName'), '/PL_df_dataflow5')]",
+			"name": "[concat(parameters('factoryName'), '/PL_df_dataflow1')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
 			"properties": {
@@ -55,7 +55,7 @@
 							},
 							"staging": {},
 							"compute": {
-								"coreCount": 8,
+								"coreCount": 16,
 								"computeType": "General"
 							},
 							"traceLevel": "Fine"
@@ -66,7 +66,7 @@
 					"elapsedTimeMetric": {}
 				},
 				"annotations": [],
-				"lastPublishTime": "2024-01-24T00:15:12Z"
+				"lastPublishTime": "2024-01-24T00:37:27Z"
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/dataflows/df_dataflow1')]"
@@ -101,7 +101,7 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/ds_blbsa_2014')]",
+			"name": "[concat(parameters('factoryName'), '/ds_blbsa_2017')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
 			"properties": {
@@ -114,7 +114,7 @@
 				"typeProperties": {
 					"location": {
 						"type": "AzureBlobStorageLocation",
-						"fileName": "Sales_File_2014.csv",
+						"fileName": "2017_Students_Batch.csv",
 						"container": "srccon"
 					},
 					"columnDelimiter": ",",
@@ -124,19 +124,19 @@
 				},
 				"schema": [
 					{
-						"name": "Country",
+						"name": "StudentsID",
 						"type": "String"
 					},
 					{
-						"name": "Year",
+						"name": "StudentsName",
 						"type": "String"
 					},
 					{
-						"name": "Product_Type",
+						"name": "Address",
 						"type": "String"
 					},
 					{
-						"name": "Sales",
+						"name": "Dept",
 						"type": "String"
 					}
 				]
@@ -146,7 +146,7 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/ds_blbsa_2020')]",
+			"name": "[concat(parameters('factoryName'), '/ds_blbsa_2018')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
 			"properties": {
@@ -159,7 +159,7 @@
 				"typeProperties": {
 					"location": {
 						"type": "AzureBlobStorageLocation",
-						"fileName": "Sales_File_2020.csv",
+						"fileName": "2018_Students_Batch.csv",
 						"container": "srccon"
 					},
 					"columnDelimiter": ",",
@@ -169,19 +169,19 @@
 				},
 				"schema": [
 					{
-						"name": "Country",
+						"name": "StudentsID",
 						"type": "String"
 					},
 					{
-						"name": "Year",
+						"name": "StudentsName",
 						"type": "String"
 					},
 					{
-						"name": "Product_Type",
+						"name": "Address",
 						"type": "String"
 					},
 					{
-						"name": "Sales",
+						"name": "Dept",
 						"type": "String"
 					}
 				]
@@ -230,14 +230,14 @@
 					"sources": [
 						{
 							"dataset": {
-								"referenceName": "ds_blbsa_2014",
+								"referenceName": "ds_blbsa_2017",
 								"type": "DatasetReference"
 							},
 							"name": "source1"
 						},
 						{
 							"dataset": {
-								"referenceName": "ds_blbsa_2020",
+								"referenceName": "ds_blbsa_2018",
 								"type": "DatasetReference"
 							},
 							"name": "source2"
@@ -254,34 +254,36 @@
 					],
 					"transformations": [
 						{
-							"name": "Exists"
+							"name": "join1"
 						}
 					],
 					"scriptLines": [
 						"source(output(",
-						"          Country as string,",
-						"          Year as string,",
-						"          Product_Type as string,",
-						"          Sales as string",
+						"          StudentsID as string,",
+						"          StudentsName as string,",
+						"          Address as string,",
+						"          Dept as string",
 						"     ),",
 						"     allowSchemaDrift: true,",
 						"     validateSchema: false,",
 						"     ignoreNoFilesFound: false) ~> source1",
 						"source(output(",
-						"          Country as string,",
-						"          Year as string,",
-						"          Product_Type as string,",
-						"          Sales as string",
+						"          StudentsID as string,",
+						"          StudentsName as string,",
+						"          Address as string,",
+						"          Dept as string",
 						"     ),",
 						"     allowSchemaDrift: true,",
 						"     validateSchema: false,",
 						"     ignoreNoFilesFound: false) ~> source2",
-						"source1, source2 exists(source1@Product_Type == source2@Product_Type,",
-						"     negate:false,",
-						"     broadcast: 'auto')~> Exists",
-						"Exists sink(allowSchemaDrift: true,",
+						"source1, source2 join(source1@StudentsID == source2@StudentsID,",
+						"     joinType:'inner',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> join1",
+						"join1 sink(allowSchemaDrift: true,",
 						"     validateSchema: false,",
-						"     partitionFileNames:['OnlyYears.csv'],",
+						"     partitionFileNames:['Innerjoinresults.csv'],",
 						"     umask: 0022,",
 						"     preCommands: [],",
 						"     postCommands: [],",
@@ -292,8 +294,8 @@
 				}
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/ds_blbsa_2014')]",
-				"[concat(variables('factoryId'), '/datasets/ds_blbsa_2020')]",
+				"[concat(variables('factoryId'), '/datasets/ds_blbsa_2017')]",
+				"[concat(variables('factoryId'), '/datasets/ds_blbsa_2018')]",
 				"[concat(variables('factoryId'), '/datasets/ds_adlsa_dest')]"
 			]
 		}
