@@ -1,0 +1,75 @@
+{
+	"name": "df_dataflow1",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_Sql",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_adlsa",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "pivot1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          ProductID as integer,",
+				"          Name as string,",
+				"          ProductNumber as string,",
+				"          Color as string,",
+				"          StandardCost as decimal(19,4),",
+				"          ListPrice as decimal(19,4),",
+				"          Size as string,",
+				"          Weight as decimal(8,2),",
+				"          ProductCategoryID as integer,",
+				"          ProductModelID as integer,",
+				"          SellStartDate as timestamp,",
+				"          SellEndDate as timestamp,",
+				"          DiscontinuedDate as timestamp,",
+				"          ThumbNailPhoto as binary,",
+				"          ThumbnailPhotoFileName as string,",
+				"          rowguid as string,",
+				"          ModifiedDate as timestamp",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> source1",
+				"source1 derive(Color = iif(isNull(Color) || Color == 'null', 'NA', Color),",
+				"          Size = iif(isNull(Size) || Size == 'null', 'NA', Size)) ~> derivedColumn1",
+				"derivedColumn1 pivot(groupBy(Size),",
+				"     pivotBy(Color),",
+				"     Avg = avg(StandardCost),",
+				"     columnNaming: '$N$V',",
+				"     lateral: true) ~> pivot1",
+				"pivot1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     partitionFileNames:['pivotresults.csv'],",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     partitionBy('hash', 1)) ~> sink1"
+			]
+		}
+	}
+}
